@@ -11,6 +11,7 @@ from keras.layers import Input, Embedding, Dense, Conv2D, MaxPool2D
 from keras.layers import Reshape, Flatten, Concatenate, Dropout, SpatialDropout1D
 from keras.preprocessing import text, sequence
 from keras.callbacks import Callback
+from preprocess import PatternTokenizer
 
 import warnings
 
@@ -27,6 +28,10 @@ train = pd.read_csv('train.csv')
 test = pd.read_csv('test.csv')
 submission = pd.read_csv('sample_submission.csv')
 
+tokenizer1 = PatternTokenizer()
+train["comment_text"] = tokenizer1.process_ds(train["comment_text"]).str.join(sep=" ")
+test["comment_text"] = tokenizer1.process_ds(test["comment_text"]).str.join(sep=" ")
+
 X_train = train["comment_text"].fillna("fillna").values
 y_train = train[["toxic", "severe_toxic", "obscene", "threat", "insult", "identity_hate"]].values
 X_test = test["comment_text"].fillna("fillna").values
@@ -34,6 +39,7 @@ X_test = test["comment_text"].fillna("fillna").values
 max_features = 100000
 maxlen = 200
 embed_size = 300
+
 
 tokenizer = text.Tokenizer(num_words=max_features)
 tokenizer.fit_on_texts(list(X_train) + list(X_test))
@@ -113,8 +119,8 @@ def get_model():
 
 model = get_model()
 
-batch_size = 1024
-epochs = 2
+batch_size = 16
+epochs = 3
 
 X_tra, X_val, y_tra, y_val = train_test_split(x_train, y_train, train_size=0.95, random_state=233)
 RocAuc = RocAucEvaluation(validation_data=(X_val, y_val), interval=1)
@@ -122,6 +128,6 @@ RocAuc = RocAucEvaluation(validation_data=(X_val, y_val), interval=1)
 hist = model.fit(X_tra, y_tra, batch_size=batch_size, epochs=epochs, validation_data=(X_val, y_val),
                  callbacks=[RocAuc], verbose=1)
 
-y_pred = model.predict(x_test, batch_size=1024)
+y_pred = model.predict(x_test, batch_size=16)
 submission[["toxic", "severe_toxic", "obscene", "threat", "insult", "identity_hate"]] = y_pred
 submission.to_csv('CNN.csv', index=False)

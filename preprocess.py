@@ -3,6 +3,10 @@ import numpy as np
 import copy
 import re
 from keras.preprocessing.text import text_to_word_sequence
+from nltk.tokenize import sent_tokenize, word_tokenize
+from nltk.corpus import stopwords
+
+
 
 
 
@@ -246,11 +250,35 @@ class PatternTokenizer(BaseTokenizer):
 
 
 def runpreprocess():
-    train = pd.read_csv("train.csv")
-    test = pd.read_csv("test.csv")
+    import csv
+
+    train = open("train.csv")
+    tr = train.read()
+
+    test = open("test.csv")
+    te = test.read()
+
+
+    filtered_tr = [w for w in tr if not w in stopwords.words('english')]
+    filtered_te = [k for k in te if not k in stopwords.words('english')]
+
+
+
+
+
+    train = pd.read_csv(filtered_tr)
+    test = pd.read_csv(filtered_te)
+
+
+
+
+
 
     tokenizer = PatternTokenizer()
-    train["comment_text"] = tokenizer.process_ds(train["comment_text"]).str.join(sep=" ")
-    test["comment_text"] = tokenizer.process_ds(test["comment_text"]).str.join(sep=" ")
+    train["comment_text"] = tokenizer.process_ds(train).str.join(sep=" ")
+    test["comment_text"] = tokenizer.process_ds(test).str.join(sep=" ")
     #train.to_csv("train_preprocessed.csv", index=False)
     #test.to_csv("test_preprocessed.csv", index=False)
+    print(train["comment_text"].head(5))
+
+runpreprocess()
